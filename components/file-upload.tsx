@@ -18,6 +18,7 @@ interface FileUploadProps {
   accept: string
   files: FileData[]
   onChange: (files: FileData[]) => void
+  maxSizeMB?: number // 파일 크기 제한 (MB)
 }
 
 export function FileUpload({
@@ -28,13 +29,25 @@ export function FileUpload({
   accept,
   files,
   onChange,
+  maxSizeMB = 10, // 기본값 10MB
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleFiles = useCallback(
     (fileList: FileList) => {
+      setError(null)
       const remaining = maxFiles - files.length
       const newFiles = Array.from(fileList).slice(0, remaining)
+
+      // 파일 크기 검증
+      const maxSizeBytes = maxSizeMB * 1024 * 1024
+      const oversizedFiles = newFiles.filter(file => file.size > maxSizeBytes)
+
+      if (oversizedFiles.length > 0) {
+        setError(`파일 크기는 ${maxSizeMB}MB를 초과할 수 없습니다.`)
+        return
+      }
 
       Promise.all(
         newFiles.map(
@@ -55,9 +68,12 @@ export function FileUpload({
         )
       ).then((newFileData) => {
         onChange([...files, ...newFileData])
+      }).catch((err) => {
+        setError('파일을 읽는 중 오류가 발생했습니다.')
+        console.error('File read error:', err)
       })
     },
-    [files, maxFiles, onChange]
+    [files, maxFiles, onChange, maxSizeMB]
   )
 
   const removeFile = (index: number) => {
@@ -71,6 +87,12 @@ export function FileUpload({
         <span className="ml-1 text-destructive">*</span>
       </label>
       <p className="mb-3 text-sm text-muted-foreground">{description}</p>
+
+      {error && (
+        <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div
         className={`relative overflow-hidden rounded-lg border-2 border-dashed transition-colors ${
