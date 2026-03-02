@@ -31,7 +31,7 @@ export function FileUpload({
   accept,
   files,
   onChange,
-  maxSizeMB = 10, // 기본값 10MB
+  maxSizeMB = 0, // 0 = 제한 없음
   category,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
@@ -47,13 +47,15 @@ export function FileUpload({
         const remaining = maxFiles - files.length
         const newFiles = Array.from(fileList).slice(0, remaining)
 
-        // 파일 크기 검증
-        const maxSizeBytes = maxSizeMB * 1024 * 1024
-        const oversizedFiles = newFiles.filter(file => file.size > maxSizeBytes)
+        // 파일 크기 검증 (maxSizeMB가 0이면 제한 없음)
+        if (maxSizeMB > 0) {
+          const maxSizeBytes = maxSizeMB * 1024 * 1024
+          const oversizedFiles = newFiles.filter(file => file.size > maxSizeBytes)
 
-        if (oversizedFiles.length > 0) {
-          setError(`파일 크기는 ${maxSizeMB}MB를 초과할 수 없습니다.`)
-          return
+          if (oversizedFiles.length > 0) {
+            setError(`파일 크기는 ${maxSizeMB}MB를 초과할 수 없습니다.`)
+            return
+          }
         }
 
         // Upload files to Supabase Storage and get preview URLs
