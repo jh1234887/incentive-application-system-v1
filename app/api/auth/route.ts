@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-const ADMIN_ID = "admin";
-const ADMIN_PW = "$init0000!";
-
 export async function POST(request: Request) {
   const { username, password } = await request.json();
+
+  const ADMIN_ID = process.env.ADMIN_ID;
+  const ADMIN_PW = process.env.ADMIN_PW;
+
+  if (!ADMIN_ID || !ADMIN_PW) {
+    return NextResponse.json(
+      { success: false, error: "서버 설정 오류입니다." },
+      { status: 500 }
+    );
+  }
 
   if (username === ADMIN_ID && password === ADMIN_PW) {
     const cookieStore = await cookies();
